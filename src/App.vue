@@ -1,52 +1,51 @@
 <template>
   <div id="app">
-    <header-menu @showInfo='showInfo' ></header-menu>
-    <info-card v-if="isInfoCard" @hideInfo='hideInfo'></info-card>
+    <header-menu @showInfo="showInfo" @changeColorAdd='changeAddColor' @setStartColor='setStartColor' @changeSecondColor='changeSecondColor' @changeText='changeTextColor'></header-menu>
+    <info-card v-if="isInfoCard" @hideInfo="hideInfo"></info-card>
     <div v-else class="td_card">
       <div class="title">ToDo list</div>
 
-    <div class="td_inner">
-      <div class="task_list">
-        <task-component
-          v-for="(task, index) in tasks"
-          :task="task"
-          :key="task.id"
-          @deleteTask="removeTask(index)"
-          @returnTask="returnTask(index)"
-          @completeTask="completeThisTask(index)"
-        ></task-component>
-        <div v-if="isInput" class="input_task">
-          <input
-            class="input_text"
-            type="text"
-            @click="checkWarning"
-            v-model="text"
-            @keyup.enter="saveTask"
-          />
-          <div class="date">{{ date }}</div>
-          <i class="fa-solid fa-floppy-disk save_task" @click="saveTask"></i>
-        </div>
-        <div v-else class="add_task_btn" @click="showInput">
-          <i class="fa-solid fa-plus"></i>
-          Add new task
+      <div class="td_inner" :style="{backgroundColor:this.secondColor}">
+        <div class="task_list">
+          <task-component
+            v-for="(task, index) in tasks"
+            :task="task"
+            :key="task.id"
+            @deleteTask="removeTask(index)"
+            @returnTask="returnTask(index)"
+            @completeTask="completeThisTask(index)"
+          ></task-component>
+          <div v-if="isInput" class="input_task">
+            <input
+              class="input_text"
+              type="text"
+              @click="checkWarning"
+              v-model="text"
+              @keyup.enter="saveTask"
+            />
+            <div class="date">{{ date }}</div>
+            <i class="fa-solid fa-floppy-disk save_task" @click="saveTask"></i>
+          </div>
+          <div :style="{backgroundColor:this.firstColor, color:this.textColor}" v-else class="add_task_btn" @click="showInput">
+            <i class="fa-solid fa-plus"></i>
+            Add new task
+          </div>
         </div>
       </div>
     </div>
-    </div>
-    
   </div>
 </template>
 
 <script>
 import TaskComponent from "./components/task.vue";
 import HeaderMenu from "./components/headerMenu.vue";
-import infoCard from './components/info.vue'
+import infoCard from "./components/info.vue";
 export default {
   name: "App",
   components: {
     TaskComponent,
     HeaderMenu,
-    infoCard
+    infoCard,
   },
   data() {
     return {
@@ -66,10 +65,41 @@ export default {
       date: "",
       isInput: false,
       warned: false,
-      isInfoCard: true
+      isInfoCard: true,
+      firstColor:'#73a9ff',
+      secondColor:'#ecf3ff',
+      textColor:'#000',
+      MainfirstColor: "#73a9ff",
+      MainsecondColor: "#ecf3ff",
+      MaintextColor: "#fff",
     };
   },
+  mounted() {
+    if (localStorage.getItem("tasks")) {
+      try {
+        this.tasks = JSON.parse(localStorage.getItem("tasks"));
+      } catch (e) {
+        localStorage.removeItem("tasks");
+      }
+    }
+    if (localStorage.getItem("info") == 'was') {
+      this.isInfoCard = false
+    }
+  },
   methods: {
+    checkInfo(){
+      localStorage.setItem('info', 'was')
+    },
+    addToStorage() {
+      if (!this.text) {
+        return;
+      }
+      this.updateStorage();
+    },
+    updateStorage() {
+      const parsed = JSON.stringify(this.tasks);
+      localStorage.setItem("tasks", parsed);
+    },
     getDate() {
       let today = new Date();
       let dd = String(today.getDate()).padStart(2, "0");
@@ -92,17 +122,20 @@ export default {
           date: this.date,
           complete: false,
         });
+        this.addToStorage();
         this.isInput = false;
       } else {
         this.text = "Enter text";
         this.warned = true;
       }
     },
-    hideInfo(){
-      this.isInfoCard=false
+    hideInfo() {
+      this.isInfoCard = false;
+      this.checkInfo()
     },
-    showInfo(){
-      this.isInfoCard=true
+    showInfo() {
+      this.isInfoCard = true;
+
     },
     checkWarning() {
       if (this.warned) {
@@ -113,15 +146,30 @@ export default {
     },
     removeTask(index) {
       this.tasks.splice(index, 1);
+      this.updateStorage();
     },
     completeThisTask(index) {
       this.tasks[index].complete = true;
+      this.updateStorage()
     },
     returnTask(index) {
       this.tasks[index].complete = false;
+      this.updateStorage()
     },
-    
-    
+    changeAddColor(data){
+      this.firstColor = data
+    },
+    changeSecondColor(data){
+      this.secondColor = data
+    },
+    changeTextColor(data){
+      this.textColor = data
+    },
+    setStartColor(){
+      this.firstColor = this.MainfirstColor
+      this.secondColor = this.MainsecondColor
+      this.textColor = this.MaintextColor
+    }
   },
 };
 </script>
@@ -177,9 +225,9 @@ export default {
   background-color: rgb(115, 169, 255);
   transition: all 0.2s linear;
   cursor: pointer;
+  color: #fff;
 }
 .add_task_btn:hover {
-  background-color: rgb(102, 148, 223);
-  color: #fff;
+  box-shadow: 3px 3px 3px rgb(127, 125, 125);
 }
 </style>
